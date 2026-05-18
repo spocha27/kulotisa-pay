@@ -1,0 +1,56 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: kulotisa_db
+    environment:
+      POSTGRES_DB: kulotisa
+      POSTGRES_USER: kulotisa_user
+      POSTGRES_PASSWORD: kulotisa_pass
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+
+  redis:
+    image: redis:7-alpine
+    container_name: kulotisa_redis
+    ports:
+      - '6379:6379'
+
+  backend:
+    build: ./backend
+    container_name: kulotisa_backend
+    environment:
+      DATABASE_URL: postgresql://kulotisa_user:kulotisa_pass@postgres:5432/kulotisa
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: change_this_in_production
+      PORT: 4000
+      NODE_ENV: development
+    ports:
+      - '4000:4000'
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+
+  frontend:
+    build: ./frontend
+    container_name: kulotisa_frontend
+    environment:
+      REACT_APP_API_URL: http://localhost:4000/api
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

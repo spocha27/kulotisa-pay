@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { authenticate } from '../middleware/auth';
+import { createTransaction, getTransaction, getUserTransactions, payInstalment } from '../controllers/transactions.controller';
+const router = Router();
+router.use(authenticate);
+router.post('/', createTransaction);
+router.get('/my', getUserTransactions);
+router.get('/:id', getTransaction);
+router.post('/instalments/:instalment_id/pay', payInstalment);
+export default router;
